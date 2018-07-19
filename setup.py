@@ -16,7 +16,7 @@ entry_points = """
 [console_scripts]
 # script_name = aws_exporter.module:function
 # For example:
-# fibonacci = aws_exporter.skeleton:run
+aws-exporter = aws_exporter.cli:run
 """
 
 

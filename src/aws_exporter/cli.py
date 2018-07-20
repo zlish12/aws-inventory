@@ -109,7 +109,7 @@ def runEc2(args):
         'ec2',
         aws_access_key_id=args.access_key,
         aws_secret_access_key=args.secret_key,
-        region=args.region
+        region_name=args.region
     )
 
     # Retrieves all regions/endpoints that work with EC2

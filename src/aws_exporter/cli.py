@@ -10,6 +10,7 @@ import logging
 import boto3
 
 from aws_exporter import __version__
+from pprint import pprint
 
 __author__ = "Zlish"
 __copyright__ = "Zlish"
@@ -17,12 +18,69 @@ __license__ = "mit"
 
 _logger = logging.getLogger(__name__)
 
+
+def run_ec2(args):
+    session = boto3.Session(
+        aws_access_key_id=args.access_key,
+        aws_secret_access_key=args.secret_key,
+    )
+
+    ec2 = session.resource('ec2')
+
+    # Get information for all running instances
+    running_instances = ec2.instances.filter(Filters=[{
+        'Name': 'instance-state-name',
+        'Values': ['running']}])
+
+    ec2info = {}
+    attributes = ['Name', 'Type', 'ID', 'State', 'Private IP', 'Public IP', 'Platform']
+
+    for instance in running_instances:
+        # Add instance info to a dictionary
+        ec2info[instance.id] = {
+            'Name': get_instance_name(instance),
+            'Type': instance.instance_type,
+            'ID': instance.instance_id,
+            'State': instance.state['Name'],
+            'Private IP': instance.private_ip_address,
+            'Public IP': instance.public_ip_address,
+            'Platform': instance.platform,
+        }
+
+    # Print results to stdout
+    print_stdout(ec2info, attributes)
+
+    if args.xlsx:
+        export_to_xlsx(ec2info, attributes)
+
+
+def get_instance_name(instance):
+    for tag in instance.tags:
+        if 'Name' in tag['Key']:
+            return tag['Value']
+
+
+def print_stdout(ec2info, attributes):
+    for instance_id, instance in ec2info.items():
+        print("Instance Id: " + instance_id)
+        for key in attributes:
+            print("{0}: {1}".format(key, instance[key]))
+        print("------")
+
+
+def export_to_xlsx(ec2info, attributes):
+    print("\n\nExporting results to excel spreadsheet")
+    print("--------------------------------------")
+    print("Instance Id,", end="")
+    print(",".join(attributes))
+    print("")
+
+
+
 def parse_args(args):
     """Parse command line parameters
-
     Args:
       args ([str]): command line parameters as list of strings
-
     Returns:
       :obj:`argparse.Namespace`: command line parameters namespace
     """
@@ -75,7 +133,6 @@ def parse_args(args):
 
 def setup_logging(loglevel):
     """Setup basic logging
-
     Args:
       loglevel (int): minimum loglevel for emitting messages
     """
@@ -92,34 +149,17 @@ def validate(args):
     if access_key is None or secret_key is None or region is None:
         print("""
 Must set AWS Secret Key and Access Key:
-
 --access_key <access_key>
 --secret_key <secret_key>
-
 or
-
 export AWS_ACCESS_KEY_ID=
 export AWS_SECRET_ACCESS_KEY=
         """)
         sys.exit(1)
 
 
-def runEc2(args):
-    ec2 = boto3.client(
-        'ec2',
-        aws_access_key_id=args.access_key,
-        aws_secret_access_key=args.secret_key,
-        region_name=args.region
-    )
-
-    # Retrieves all regions/endpoints that work with EC2
-    response = ec2.describe_regions()
-    print('Regions:', response['Regions'])
-
-
 def main(args):
     """Main entry point allowing external calls
-
     Args:
       args ([str]): command line parameter list
     """
@@ -132,7 +172,7 @@ def main(args):
 
     # Do Stuff here
     if args.aws_service_name == 'ec2':
-        runEc2(args)
+        run_ec2(args)
     else:
         print("service name: " + args.aws_service_name + " is not currently supported")
         sys.exit(1)

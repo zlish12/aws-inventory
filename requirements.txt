@@ -5,3 +5,4 @@
 # numpy==1.13.3
 # scipy==1.0
 boto3==1.7.58
+prettytable==0.7.2

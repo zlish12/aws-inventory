@@ -11,6 +11,7 @@ import boto3
 
 from aws_exporter import __version__
 from pprint import pprint
+from prettytable import PrettyTable
 
 __author__ = "Zlish"
 __copyright__ = "Zlish"
@@ -33,17 +34,19 @@ def run_ec2(args):
         'Values': ['running']}])
 
     ec2info = {}
-    attributes = ['Name', 'Type', 'ID', 'State', 'Private IP', 'Public IP', 'Platform']
+    attributes = ['Name', 'KeyName', 'Type', 'ID', 'State', 'Private IP', 'Public IP', 'ImageID', 'Platform']
 
     for instance in running_instances:
         # Add instance info to a dictionary
         ec2info[instance.id] = {
             'Name': get_instance_name(instance),
+            'KeyName': instance.key_name,
             'Type': instance.instance_type,
             'ID': instance.instance_id,
             'State': instance.state['Name'],
             'Private IP': instance.private_ip_address,
             'Public IP': instance.public_ip_address,
+            'ImageId': instance.image_id,
             'Platform': instance.platform,
         }
 
@@ -61,11 +64,19 @@ def get_instance_name(instance):
 
 
 def print_stdout(ec2info, attributes):
+    print ('You have successfully connected to AWS')
+    t = PrettyTable(['Instance ID', 'Name', 'KeyName', 'Type', 'ID', 'State', 'Private IP', 'Public IP', 'Image ID', 'Platform'])
     for instance_id, instance in ec2info.items():
-        print("Instance Id: " + instance_id)
-        for key in attributes:
-            print("{0}: {1}".format(key, instance[key]))
-        print("------")
+        t.add_row([instance_id, instance['Name'], instance['KeyName'], instance['Type'], instance['ID'], instance['State'], 
+        instance['Private IP'], instance['Public IP'], instance['ImageId'], instance['Platform']])
+    print (t)
+
+#def print_stdout(ec2info, attributes):
+    #for instance_id, instance in ec2info.items():
+        #print("Instance Id: " + instance_id)
+        #for key in attributes:
+            #print("{0}: {1}".format(key, instance[key]))
+        #print("-------------")
 
 
 def export_to_xlsx(ec2info, attributes):

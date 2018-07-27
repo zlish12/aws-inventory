@@ -8,6 +8,8 @@ import sys
 import os
 import logging
 import boto3
+import xlsxwriter
+import datetime
 
 from aws_exporter import __version__
 from pprint import pprint
@@ -34,20 +36,18 @@ def run_ec2(args):
         'Values': ['running']}])
 
     ec2info = {}
-    attributes = ['Name', 'KeyName', 'Type', 'ID', 'State', 'Private IP', 'Public IP', 'ImageID', 'Platform']
+    attributes = ['Name', 'Type', 'ID', 'State', 'Platform', 'Private IP', 'Public IP']
 
     for instance in running_instances:
         # Add instance info to a dictionary
         ec2info[instance.id] = {
             'Name': get_instance_name(instance),
-            'KeyName': instance.key_name,
             'Type': instance.instance_type,
             'ID': instance.instance_id,
             'State': instance.state['Name'],
+            'Platform': instance.platform,
             'Private IP': instance.private_ip_address,
             'Public IP': instance.public_ip_address,
-            'ImageId': instance.image_id,
-            'Platform': instance.platform,
         }
 
     # Print results to stdout
@@ -64,19 +64,12 @@ def get_instance_name(instance):
 
 
 def print_stdout(ec2info, attributes):
-    print ('You have successfully connected to AWS')
-    t = PrettyTable(['Instance ID', 'Name', 'KeyName', 'Type', 'ID', 'State', 'Private IP', 'Public IP', 'Image ID', 'Platform'])
+    t = PrettyTable(['Instance ID', 'Name', 'Type', 'ID', 'State', 'Platform', 'Private IP', 'Public IP'])
     for instance_id, instance in ec2info.items():
-        t.add_row([instance_id, instance['Name'], instance['KeyName'], instance['Type'], instance['ID'], instance['State'], 
-        instance['Private IP'], instance['Public IP'], instance['ImageId'], instance['Platform']])
+        t.add_row([instance_id, instance['Name'], instance['Type'], instance['ID'], instance['State'], 
+        instance['Platform'],instance['Private IP'], instance['Public IP']])
     print (t)
 
-#def print_stdout(ec2info, attributes):
-    #for instance_id, instance in ec2info.items():
-        #print("Instance Id: " + instance_id)
-        #for key in attributes:
-            #print("{0}: {1}".format(key, instance[key]))
-        #print("-------------")
 
 
 def export_to_xlsx(ec2info, attributes):
@@ -85,6 +78,46 @@ def export_to_xlsx(ec2info, attributes):
     print("Instance Id,", end="")
     print(",".join(attributes))
     print("")
+
+    # Create a workbook and add a worksheet.
+    workbook = xlsxwriter.Workbook('EC2Instance.xlsx')
+    worksheet = workbook.add_worksheet()
+
+    # Add a bold format to use to highlight cells.
+    bold = workbook.add_format({'bold': 1})
+
+    # Adjust the column width.
+    worksheet.set_column(0, 1, 18)
+    worksheet.set_column(9, 1, 15)
+   
+    # Write data headers. 
+    worksheet.write('A1', 'Instance Id', bold)
+    worksheet.write('B1', 'Name', bold)
+    worksheet.write('C1', 'Type', bold)
+    worksheet.write('D1', 'ID', bold)
+    worksheet.write('E1', 'State', bold)
+    worksheet.write('F1', 'Platform', bold)
+    worksheet.write('G1', 'Private IP', bold)
+    worksheet.write('H1', 'Public IP', bold)
+
+    # Start from the first cell. Rows and columns are zero indexed 
+    row = 1
+    col = 0 
+
+    # Iterate over data and write it out row by row
+    for instance_id, instance in ec2info.items():
+        worksheet.write(row, col,     instance_id           )
+        worksheet.write(row, col + 1, instance['Name']      )
+        worksheet.write(row, col + 2, instance['Type']      )
+        worksheet.write(row, col + 3, instance['ID']        )
+        worksheet.write(row, col + 4, instance['State']     )
+        worksheet.write(row, col + 5, instance['Platform']  )
+        worksheet.write(row, col + 6, instance['Private IP'])
+        worksheet.write(row, col + 7, instance['Public IP'] )
+        row += 1
+        
+    workbook.close()
+
 
 
 

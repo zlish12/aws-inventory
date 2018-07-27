@@ -9,7 +9,6 @@ import os
 import logging
 import boto3
 import xlsxwriter
-import datetime
 
 from aws_exporter import __version__
 from pprint import pprint
@@ -36,7 +35,7 @@ def run_ec2(args):
         'Values': ['running']}])
 
     ec2info = {}
-    attributes = ['Name', 'Type', 'ID', 'State', 'Platform', 'Private IP', 'Public IP']
+    attributes = ['Instance', 'Name', 'Type', 'ID', 'State', 'Platform', 'Private IP', 'Public IP']
 
     for instance in running_instances:
         # Add instance info to a dictionary
@@ -64,12 +63,11 @@ def get_instance_name(instance):
 
 
 def print_stdout(ec2info, attributes):
-    t = PrettyTable(['Instance ID', 'Name', 'Type', 'ID', 'State', 'Platform', 'Private IP', 'Public IP'])
+    t = PrettyTable(attributes)
     for instance_id, instance in ec2info.items():
         t.add_row([instance_id, instance['Name'], instance['Type'], instance['ID'], instance['State'], 
         instance['Platform'],instance['Private IP'], instance['Public IP']])
     print (t)
-
 
 
 def export_to_xlsx(ec2info, attributes):

@@ -20,7 +20,6 @@ How to set env variables:
     2. vim .bash_profile 
     3. insert:  
         export AWS_ACCESS_KEY_ID=AABBCCDDEEFF
-        
         export AWS_SECRET_ACCESS_KEY=aabbCCDDeeff112233 
     4. esc :wq to save environment variables 
 
@@ -32,7 +31,11 @@ Using CMD argument
 Usage 
 ===========
 
-$ python ./cli.py ec2           #reports EC2 information 
+$ python ./cli.py ec2           
+
+#reports EC2 information 
+
+
 
 
 Output Example
@@ -48,6 +51,7 @@ $ python ./cli.py ec2
 +-------------+-------+----------+--------+---------+----------+
 
 $
+
 
 If you want information from above to go into excel spread sheet:
 =====

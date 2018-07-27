@@ -46,10 +46,7 @@ $ python ./cli.py ec2
 +-------------+-------+----------+--------+---------+----------+
 |   1122aabb  | Name1 | t2.small | i-1123 | running |  linux   |
 |   1122aabb  | Name2 | t2.small | i-1123 | running |  linux   |
-|   1122aabb  | Name3 | t2.small | i-1123 | running |  linux   |
-|   1122aabb  | Name4 | t2.small | i-1123 | running |  linux   | 
-|   1122aabb  | Name5 | t2.small | i-1123 | running |  linux   | 
-|   1122aabb  | Name6 | t2.small | i-1123 | running |  linux   | 
+|   1122aabb  | Name3 | t2.small | i-1123 | running |  linux   | 
 +-------------+-------+----------+--------+---------+----------+
 
 $

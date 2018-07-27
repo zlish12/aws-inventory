@@ -6,3 +6,4 @@
 # scipy==1.0
 boto3==1.7.58
 prettytable==0.7.2
+xlsxwriter==1.0.5

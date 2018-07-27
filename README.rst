@@ -45,8 +45,6 @@ $ python ./cli.py ec2
 | Instance ID |  Name |   Type   |   ID   |  State  | Platform | 
 +-------------+-------+----------+--------+---------+----------+
 |   1122aabb  | Name1 | t2.small | i-1123 | running |  linux   |
-|   1122aabb  | Name2 | t2.small | i-1123 | running |  linux   |
-|   1122aabb  | Name3 | t2.small | i-1123 | running |  linux   | 
 +-------------+-------+----------+--------+---------+----------+
 
 $

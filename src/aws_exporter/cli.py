@@ -117,8 +117,6 @@ def export_to_xlsx(ec2info, attributes):
     workbook.close()
 
 
-
-
 def parse_args(args):
     """Parse command line parameters
     Args:

@@ -36,7 +36,7 @@ def run_ec2(args):
 
 
     ec2info = {}
-    attributes = ['Instance ID','Availability Zone', 'Name', 'Type', 'Platform', 'Security Group Name']
+    attributes = ['Instance ID','Availability Zone', 'Name', 'Type', 'Platform', 'Security Group Name', 'Security Group ID']
 
 
     for instance in running_instances:
@@ -47,6 +47,7 @@ def run_ec2(args):
             'Type': instance.instance_type,
             'Platform': instance.platform,
             'Security Group Name': get_security_groups(instance),
+            'Security Group ID': get_security_groups_id(instance),
         }
 
     # Print results to stdout
@@ -57,11 +58,12 @@ def run_ec2(args):
 
 def get_security_groups(instance):
     for group in instance.security_groups:
-        if 'Security Group Name' in group['GroupName']:
-            return group['Value']
+        return group['GroupName']
+
+def get_security_groups_id(instance):
     for groupid in instance.security_groups:
-        if 'Security Group Id' in groupid['GroupId']:
-            return groupid['Value']
+        return groupid['GroupId']
+    
 
 def get_instance_name(instance):
     for tag in instance.tags:
@@ -72,7 +74,8 @@ def get_instance_name(instance):
 def print_stdout(ec2info, attributes):
     t = PrettyTable(attributes)
     for instance_id, instance in ec2info.items():
-        t.add_row([instance_id, instance['Availability Zone'], instance['Name'], instance['Type'], instance['Platform'], instance['Security Group Name']])
+        t.add_row([instance_id, instance['Availability Zone'], instance['Name'], 
+        instance['Type'], instance['Platform'], instance['Security Group Name'], instance['Security Group ID']])
     print(t)
 
 def export_to_xlsx(ec2info, attributes):
@@ -98,7 +101,8 @@ def export_to_xlsx(ec2info, attributes):
     worksheet.write('C1', 'Name', bold)
     worksheet.write('D1', 'Type', bold)
     worksheet.write('E1', 'Platform', bold)
-    worksheet.write('F1', 'Security Group Id', bold)
+    worksheet.write('F1', 'Security Group Name', bold)
+    worksheet.write('G1', 'Security Group ID', bold)
 
     # Start from the first cell. Rows and columns are zero indexed 
     row = 1
@@ -112,6 +116,7 @@ def export_to_xlsx(ec2info, attributes):
         worksheet.write(row, col + 3, instance['Type']                    )
         worksheet.write(row, col + 4, instance['Platform']                )
         worksheet.write(row, col + 5, instance['Security Group Name']     )
+        worksheet.write(row, col + 6, instance['Security Group ID']       )
         row += 1
         
     workbook.close()

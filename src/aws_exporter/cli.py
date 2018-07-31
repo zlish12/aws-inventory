@@ -82,8 +82,8 @@ def export_to_xlsx(ec2info, attributes):
     print("")
 
     # Create a workbook and add a worksheet.
-    workbook = xlsxwriter.Workbook('EC2Instance.xlsx')
-    worksheet = workbook.add_worksheet()
+    workbook = xlsxwriter.Workbook('AWS-EC2.xlsx')
+    worksheet = workbook.add_worksheet('EC2')
 
     # Add a bold format to use to highlight cells.
     bold = workbook.add_format({'bold': 1})

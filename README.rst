@@ -9,6 +9,13 @@ The tool by default produces a report that can easily be read from a terminal,
 but it can also be used produce a tab separated output report that can be viewed 
 in an excel spreadsheet. This can be used by running the command followed by --xlsx.
 
+Install
+==========
+
+install boto3:
+
+    $ pip install boto3
+
 
 Configure 
 ==========

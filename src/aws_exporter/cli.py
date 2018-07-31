@@ -34,19 +34,19 @@ def run_ec2(args):
         'Name': 'instance-state-name',
         'Values': ['running']}])
 
+
     ec2info = {}
-    attributes = ['Instance', 'Name', 'Type', 'ID', 'State', 'Platform', 'Private IP', 'Public IP']
+    attributes = ['Instance ID','Availability Zone', 'Name', 'Type', 'Platform', 'Security Group Name']
+
 
     for instance in running_instances:
         # Add instance info to a dictionary
         ec2info[instance.id] = {
+            'Availability Zone': instance.placement['AvailabilityZone'],
             'Name': get_instance_name(instance),
             'Type': instance.instance_type,
-            'ID': instance.instance_id,
-            'State': instance.state['Name'],
             'Platform': instance.platform,
-            'Private IP': instance.private_ip_address,
-            'Public IP': instance.public_ip_address,
+            'Security Group Name': get_security_groups(instance),
         }
 
     # Print results to stdout
@@ -55,6 +55,13 @@ def run_ec2(args):
     if args.xlsx:
         export_to_xlsx(ec2info, attributes)
 
+def get_security_groups(instance):
+    for group in instance.security_groups:
+        if 'Security Group Name' in group['GroupName']:
+            return group['Value']
+    for groupid in instance.security_groups:
+        if 'Security Group Id' in groupid['GroupId']:
+            return groupid['Value']
 
 def get_instance_name(instance):
     for tag in instance.tags:
@@ -65,15 +72,12 @@ def get_instance_name(instance):
 def print_stdout(ec2info, attributes):
     t = PrettyTable(attributes)
     for instance_id, instance in ec2info.items():
-        t.add_row([instance_id, instance['Name'], instance['Type'], instance['ID'], instance['State'], 
-        instance['Platform'],instance['Private IP'], instance['Public IP']])
-    print (t)
-
+        t.add_row([instance_id, instance['Availability Zone'], instance['Name'], instance['Type'], instance['Platform'], instance['Security Group Name']])
+    print(t)
 
 def export_to_xlsx(ec2info, attributes):
-    print("\n\nExporting results to excel spreadsheet")
+    print("\n\nExporting following results to excel spreadsheet")
     print("--------------------------------------")
-    print("Instance Id,", end="")
     print(",".join(attributes))
     print("")
 
@@ -90,13 +94,11 @@ def export_to_xlsx(ec2info, attributes):
    
     # Write data headers. 
     worksheet.write('A1', 'Instance Id', bold)
-    worksheet.write('B1', 'Name', bold)
-    worksheet.write('C1', 'Type', bold)
-    worksheet.write('D1', 'ID', bold)
-    worksheet.write('E1', 'State', bold)
-    worksheet.write('F1', 'Platform', bold)
-    worksheet.write('G1', 'Private IP', bold)
-    worksheet.write('H1', 'Public IP', bold)
+    worksheet.write('B1', 'Availability Zone', bold)
+    worksheet.write('C1', 'Name', bold)
+    worksheet.write('D1', 'Type', bold)
+    worksheet.write('E1', 'Platform', bold)
+    worksheet.write('F1', 'Security Group Id', bold)
 
     # Start from the first cell. Rows and columns are zero indexed 
     row = 1
@@ -104,14 +106,12 @@ def export_to_xlsx(ec2info, attributes):
 
     # Iterate over data and write it out row by row
     for instance_id, instance in ec2info.items():
-        worksheet.write(row, col,     instance_id           )
-        worksheet.write(row, col + 1, instance['Name']      )
-        worksheet.write(row, col + 2, instance['Type']      )
-        worksheet.write(row, col + 3, instance['ID']        )
-        worksheet.write(row, col + 4, instance['State']     )
-        worksheet.write(row, col + 5, instance['Platform']  )
-        worksheet.write(row, col + 6, instance['Private IP'])
-        worksheet.write(row, col + 7, instance['Public IP'] )
+        worksheet.write(row, col,     instance_id                         )
+        worksheet.write(row, col + 1, instance['Availability Zone']       )
+        worksheet.write(row, col + 2, instance['Name']                    )
+        worksheet.write(row, col + 3, instance['Type']                    )
+        worksheet.write(row, col + 4, instance['Platform']                )
+        worksheet.write(row, col + 5, instance['Security Group Name']     )
         row += 1
         
     workbook.close()

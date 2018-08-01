@@ -3,13 +3,77 @@ aws-exporter
 ============
 
 
-Add a short description here!
+
+AWS EC2 export tool built with python. Useful to get summarized information on AWS EC2. 
+The tool by default produces a report that can easily be read from a terminal, 
+but it can also be used produce a tab separated output report that can be viewed 
+in an excel spreadsheet. This can be used by running the command followed by --xlsx.
+
+Install
+==========
+
+install boto3:
+
+    $ pip install boto3
 
 
-Description
+Configure 
+==========
+
+AWS EC2 export can be configured through using environment variables or through using command line arguments. 
+
+How to set env variables:
+    1. open terminal 
+    2. vim .bash_profile 
+    3. insert:  
+        
+        export AWS_ACCESS_KEY_ID=AABBCCDDEEFF
+        
+        export AWS_SECRET_ACCESS_KEY=aabbCCDDeeff112233 
+        
+    4. esc :wq to save environment variables 
+
+Using CMD argument
+    $ python ./cli.py ec2 --access_key AABBCCDDEEFF --secret_key aabbCCDDeeff112233 
+
+
+
+Setup Additional Dependencies 
 ===========
 
-A longer description of your project goes here...
+$ python setup.py develop
+
+
+Usage 
+===========
+
+$ python src/aws_exporter/cli.py ec2           
+
+#reports EC2 information 
+
+
+
+
+Output Example
+===========
+when running the output should look like this: 
+
+$ python ./cli.py ec2 
+
++-------------+-------+----------+--------+---------+----------+
+| Instance ID |  Name |   Type   |   ID   |  State  | Platform | 
++-------------+-------+----------+--------+---------+----------+
+|   1122aabb  | Name1 | t2.small | i-1123 | running |  linux   |
++-------------+-------+----------+--------+---------+----------+
+
+$
+
+
+If you want information from above to go into excel spread sheet:
+=====
+$ python ./cli.py ec2 --xlsx
+
+#Filename is stored as AWS-EC2.xlsx
 
 
 Note

@@ -38,10 +38,16 @@ Using CMD argument
 
 
 
+Setup Additional Dependencies 
+===========
+
+$ python setup.py develop
+
+
 Usage 
 ===========
 
-$ python ./cli.py ec2           
+$ python src/aws_exporter/cli.py ec2           
 
 #reports EC2 information 
 

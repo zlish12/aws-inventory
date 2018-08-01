@@ -73,7 +73,7 @@ If you want information from above to go into excel spread sheet:
 =====
 $ python ./cli.py ec2 --xlsx
 
-#Filename is stored as EC2Instance.xlsx
+#Filename is stored as AWS-EC2.xlsx
 
 
 Note

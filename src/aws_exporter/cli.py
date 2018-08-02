@@ -54,7 +54,7 @@ def run_ec2(args):
     print_stdout(ec2info, attributes)
 
     if args.xlsx:
-        export_to_xlsx(ec2info, attributes)
+        export_to_xlsx(ec2info, attributes, args)
 
 def get_platform(instance):
     platform = instance.platform 
@@ -74,7 +74,6 @@ def get_instance_name(instance):
         if 'Name' in tag['Key']:
             return tag['Value']
 
-
 def print_stdout(ec2info, attributes):
     t = PrettyTable(attributes)
     for instance_id, instance in ec2info.items():
@@ -82,14 +81,22 @@ def print_stdout(ec2info, attributes):
         instance['Type'], instance['Platform'], instance['Security Group Name'], instance['Security Group ID']])
     print(t)
 
-def export_to_xlsx(ec2info, attributes):
+def export_to_xlsx(ec2info, attributes, args):
     print("\n\nExporting following results to excel spreadsheet")
     print("--------------------------------------")
     print(",".join(attributes))
     print("")
 
-    # Create a workbook and add a worksheet.
-    workbook = xlsxwriter.Workbook('AWS-EC2.xlsx')
+    # Allow user to input own file_name
+    file_name = args.file_name 
+    if args.file_name is None:
+        print("""
+        Must enter file name 
+        --file_name <file_name>
+        """)
+
+    # Creates worksheet with user input
+    workbook = xlsxwriter.Workbook(file_name)
     worksheet = workbook.add_worksheet('EC2')
 
     # Add a bold format to use to highlight cells.
@@ -177,6 +184,12 @@ def parse_args(args):
         help="set loglevel to DEBUG",
         action='store_const',
         const=logging.DEBUG)
+    parser.add_argument(
+        '-file_name',
+        '--file_name',
+        dest = "file_name",
+        help = "Exports output to file",
+    )
     return parser.parse_args(args)
 
 

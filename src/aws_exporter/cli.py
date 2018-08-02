@@ -45,7 +45,7 @@ def run_ec2(args):
             'Availability Zone': instance.placement['AvailabilityZone'],
             'Name': get_instance_name(instance),
             'Type': instance.instance_type,
-            'Platform': instance.platform,
+            'Platform': get_platform(instance),
             'Security Group Name': get_security_groups(instance),
             'Security Group ID': get_security_groups_id(instance),
         }
@@ -56,6 +56,11 @@ def run_ec2(args):
     if args.xlsx:
         export_to_xlsx(ec2info, attributes)
 
+def get_platform(instance):
+    platform = instance.platform 
+    if platform is None:
+        return ('Linux')
+
 def get_security_groups(instance):
     for group in instance.security_groups:
         return group['GroupName']
@@ -64,7 +69,6 @@ def get_security_groups_id(instance):
     for groupid in instance.security_groups:
         return groupid['GroupId']
     
-
 def get_instance_name(instance):
     for tag in instance.tags:
         if 'Name' in tag['Key']:

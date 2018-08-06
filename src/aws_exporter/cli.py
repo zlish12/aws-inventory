@@ -10,6 +10,7 @@ import logging
 import boto3
 import xlsxwriter
 
+
 from aws_exporter import __version__
 from pprint import pprint
 from prettytable import PrettyTable
@@ -32,30 +33,34 @@ def run_ec2(args):
     # Get information for all running instances
     running_instances = ec2.instances.filter(Filters=[{
         'Name': 'instance-state-name',
-        'Values': ['running']}])
+        'Values': ['running', 'stopped']}])
 
 
     ec2info = {}
-    attributes = ['Instance ID','Availability Zone', 'Name', 'Type', 'Platform', 'Security Group Name', 'Security Group ID']
-
+    attributes = ['Region', 'Name', 'Instance ID', 'Type', 'Platform', 'Security Group Name', 'Security Group ID', 'State']
 
     for instance in running_instances:
         # Add instance info to a dictionary
         ec2info[instance.id] = {
-            'Availability Zone': instance.placement['AvailabilityZone'],
+            'Region': instance.placement['AvailabilityZone'],
             'Name': get_instance_name(instance),
+            'Instance ID': instance.id,
             'Type': instance.instance_type,
             'Platform': get_platform(instance),
             'Security Group Name': get_security_groups(instance),
             'Security Group ID': get_security_groups_id(instance),
+            'State': instance.state['Name'],
         }
 
     # Print results to stdout
     print_stdout(ec2info, attributes)
+    
+    if args.all_regions: 
+        all_regions(args)
 
     if args.xlsx:
         export_to_xlsx(ec2info, attributes, args)
-
+   
 def get_platform(instance):
     platform = instance.platform 
     if platform is None:
@@ -77,8 +82,46 @@ def get_instance_name(instance):
 def print_stdout(ec2info, attributes):
     t = PrettyTable(attributes)
     for instance_id, instance in ec2info.items():
-        t.add_row([instance_id, instance['Availability Zone'], instance['Name'], 
-        instance['Type'], instance['Platform'], instance['Security Group Name'], instance['Security Group ID']])
+        t.add_row([instance['Region'], instance['Name'], instance_id,
+        instance['Type'], instance['Platform'], instance['Security Group Name'], instance['Security Group ID'], instance['State']])
+    print(t)
+
+def all_regions(args):
+    client = boto3.client('ec2') 
+    regions = client.describe_regions()['Regions'] 
+    for region in regions: 
+        region_name=region['RegionName'] 
+    
+    # Connect to EC2 
+    for region in regions: 
+        region_name=region['RegionName'] 
+        print("Instances running in: " + region_name) 
+        ec2 = boto3.resource('ec2',region_name=region['RegionName']) 
+    # Get information for all running instances 
+    running_instances = ec2.instances.filter(Filters=[{ 
+        'Name': 'instance-state-name', 
+        'Values': ['running', 'stopped']}]) 
+    ec2info = {}
+    for instance in running_instances: 
+        for tag in instance.tags: 
+            if 'Name'in tag['Key']: 
+                name = tag['Value'] 
+    # Add instance info to a dictionary 
+    ec2info[instance.id] = { 
+        'Region': region['RegionName'],
+        'Name': name,
+        'Instance ID': instance.id,
+        'Type': instance.instance_type,
+        'Platform': get_platform(instance),
+        'Security Group Name': get_security_groups(instance),
+        'Security Group ID': get_security_groups_id(instance), 
+        'State': instance.state['Name'],
+        } 
+    attributes = ['Region', 'Name', 'Instance ID', 'Type', 'Platform', 'Security Group Name', 'Security Group ID', 'State'] 
+    t = PrettyTable(attributes)
+    for instance_id, instance in ec2info.items():
+        t.add_row([instance['Region'], instance['Name'], instance_id,
+        instance['Type'], instance['Platform'], instance['Security Group Name'], instance['Security Group ID'], instance['State']])
     print(t)
 
 def export_to_xlsx(ec2info, attributes, args):
@@ -93,7 +136,7 @@ def export_to_xlsx(ec2info, attributes, args):
         print("""
         Must enter file name 
         --file_name <file_name>
-        """)
+        """)    
 
     # Creates worksheet with user input
     workbook = xlsxwriter.Workbook(file_name)
@@ -107,27 +150,28 @@ def export_to_xlsx(ec2info, attributes, args):
     worksheet.set_column(9, 1, 15)
    
     # Write data headers. 
-    worksheet.write('A1', 'Instance Id', bold)
-    worksheet.write('B1', 'Availability Zone', bold)
-    worksheet.write('C1', 'Name', bold)
+    worksheet.write('A1', 'Region', bold)
+    worksheet.write('B1', 'Name', bold)
+    worksheet.write('C1', 'Instance ID', bold)
     worksheet.write('D1', 'Type', bold)
     worksheet.write('E1', 'Platform', bold)
     worksheet.write('F1', 'Security Group Name', bold)
     worksheet.write('G1', 'Security Group ID', bold)
-
+    worksheet.write('H1', 'State', bold)
     # Start from the first cell. Rows and columns are zero indexed 
     row = 1
     col = 0 
 
     # Iterate over data and write it out row by row
     for instance_id, instance in ec2info.items():
-        worksheet.write(row, col,     instance_id                         )
-        worksheet.write(row, col + 1, instance['Availability Zone']       )
-        worksheet.write(row, col + 2, instance['Name']                    )
+        worksheet.write(row, col,     instance['Region']                  )
+        worksheet.write(row, col + 1, instance['Name']                    )
+        worksheet.write(row, col + 2, instance_id                         )
         worksheet.write(row, col + 3, instance['Type']                    )
         worksheet.write(row, col + 4, instance['Platform']                )
         worksheet.write(row, col + 5, instance['Security Group Name']     )
         worksheet.write(row, col + 6, instance['Security Group ID']       )
+        worksheet.write(row, col + 7, instance['State']                   )
         row += 1
         
     workbook.close()
@@ -166,6 +210,11 @@ def parse_args(args):
         help="AWS Region",
         default='us-west-1')
     parser.add_argument(
+        '-all_regions',
+        '--all_regions',
+        dest="all_regions",
+        help="Outputs all AWS Regions")
+    parser.add_argument(
         '-xlsx',
         '--xlsx',
         help="Export to excel spreadsheet",
@@ -187,8 +236,8 @@ def parse_args(args):
     parser.add_argument(
         '-file_name',
         '--file_name',
-        dest = "file_name",
-        help = "Exports output to file",
+        dest="file_name",
+        help="Exports output to file",
     )
     return parser.parse_args(args)
 

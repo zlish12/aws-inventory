@@ -89,13 +89,9 @@ def print_stdout(ec2info, attributes):
 def all_regions(args):
     client = boto3.client('ec2') 
     regions = client.describe_regions()['Regions'] 
-    for region in regions: 
-        region_name=region['RegionName'] 
     
     # Connect to EC2 
-    for region in regions: 
-        region_name=region['RegionName'] 
-        print("Instances running in: " + region_name) 
+    for region in regions:  
         ec2 = boto3.resource('ec2',region_name=region['RegionName']) 
     # Get information for all running instances 
     running_instances = ec2.instances.filter(Filters=[{ 
@@ -105,7 +101,8 @@ def all_regions(args):
     for instance in running_instances: 
         for tag in instance.tags: 
             if 'Name'in tag['Key']: 
-                name = tag['Value'] 
+                name = tag['Value']
+
     # Add instance info to a dictionary 
     ec2info[instance.id] = { 
         'Region': region['RegionName'],
@@ -212,8 +209,8 @@ def parse_args(args):
     parser.add_argument(
         '-all_regions',
         '--all_regions',
-        dest="all_regions",
-        help="Outputs all AWS Regions")
+        help="Outputs all AWS Regions",
+        action='store_true')
     parser.add_argument(
         '-xlsx',
         '--xlsx',

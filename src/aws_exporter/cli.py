@@ -34,10 +34,10 @@ def run_ec2(args):
     running_instances = ec2.instances.filter(Filters=[{
         'Name': 'instance-state-name',
         'Values': ['running', 'stopped']}])
-
+    
 
     ec2info = {}
-    attributes = ['Region', 'Name', 'Instance ID', 'Type', 'Platform', 'Security Group Name', 'Security Group ID', 'State']
+    attributes_ec2 = ['Region', 'Name', 'Instance ID', 'Type', 'Platform', 'Security Group Name', 'Security Group ID', 'State']
 
     for instance in running_instances:
         # Add instance info to a dictionary
@@ -53,13 +53,14 @@ def run_ec2(args):
         }
 
     # Print results to stdout
-    print_stdout(ec2info, attributes)
+    print_stdout(ec2info, attributes_ec2)
     
     if args.all_regions: 
         all_regions(args)
 
     if args.xlsx:
-        export_to_xlsx(ec2info, attributes, args)
+        export_to_xlsx(ec2info, attributes_ec2, args)
+    
    
 def get_platform(instance):
     platform = instance.platform 
@@ -79,12 +80,127 @@ def get_instance_name(instance):
         if 'Name' in tag['Key']:
             return tag['Value']
 
-def print_stdout(ec2info, attributes):
-    t = PrettyTable(attributes)
+def print_stdout(ec2info, attributes_ec2):
+    t = PrettyTable(attributes_ec2)
     for instance_id, instance in ec2info.items():
         t.add_row([instance['Region'], instance['Name'], instance_id,
         instance['Type'], instance['Platform'], instance['Security Group Name'], instance['Security Group ID'], instance['State']])
     print(t)
+
+
+# def run_vpc(args):
+#     client = boto3.client('ec2') 
+#     vpc = client.describe_vpcs()['Vpcs']
+#     subnets = client.describe_subnets()['Subnets']
+
+#     vpcinfo = {}
+#     attributes_vpc = ['Vpc Id', 'CIDR', 'State', 'Subnets']
+
+#     for vpc_id in vpc:
+#         vpc_id = vpc_id['VpcId']
+    
+#     for cidr in vpc:
+#         cidr = cidr['CidrBlock']
+    
+#     for state in vpc:
+#         state = state['State']
+    
+#     for subnet in subnets: 
+#         subnet = subnet['SubnetId']
+
+#     vpcinfo[vpc_id] = {
+#         'Vpc Id': vpc_id,
+#         'CIDR': cidr,
+#         'State': state,
+#         'Subnet Id': subnet, 
+#     }
+  
+#     t = PrettyTable(attributes_vpc)
+#     t.add_row([vpc_id, cidr, state, subnet])
+#     print(t)
+
+#     if args.xlsx:
+#         export_to_xlsx(vpcinfo, attributes_vpc, args)
+
+
+
+def run_vpc(args):
+    session = boto3.Session(
+        aws_access_key_id=args.access_key,
+        aws_secret_access_key=args.secret_key,
+    )
+
+    ec2 = session.resource('ec2')
+
+    # Get information for all running instances
+    running_vpcs = ec2.vpcs.filter(Filters=[{
+        'Name': 'tag:Name',
+        'Values': ['unnamed']}])
+    
+    vpcinfo = {}
+    attributes_vpc = ['Vpc Id', 'CIDR', 'State', 'Instance Tenancy']
+    
+    for vpc in running_vpcs:
+        # Add instance info to a dictionary
+        vpcinfo[vpc.id] = {
+            'Vpc Id': vpc.id,
+            'CIDR': vpc.cidr_block,
+            'State': vpc.state,
+            'Instance Tenancy': vpc.instance_tenancy, 
+        }
+    
+    print_vpc(vpcinfo, attributes_vpc)
+
+def print_vpc(vpcinfo, attributes_vpc):
+    t = PrettyTable(attributes_vpc)
+    for vpc_id, vpc in vpcinfo.items():
+        t.add_row([vpc_id, vpc.cidr_block, vpc.state, vpc.instance_tenancy])
+    print(t)
+
+# def export_vpc_xlsx (vpcinfo, attributes_vpc, args):
+#     print("\n\nExporting following results to excel spreadsheet")
+#     print("--------------------------------------")
+#     print(",".join(attributes_vpc))
+#     print("")
+
+#     # Allow user to input own file_name
+#     file_name = args.file_name 
+#     if args.file_name is None:
+#         print("""
+#         Must enter file name 
+#         --file_name <file_name>
+#         """)    
+
+#     # Creates worksheet with user input
+#     workbook = xlsxwriter.Workbook(file_name)
+#     worksheet = workbook.add_worksheet('VPC')
+
+#     # Add a bold format to use to highlight cells.
+#     bold = workbook.add_format({'bold': 1})
+
+#     # Adjust the column width.
+#     worksheet.set_column(0, 1, 18)
+#     worksheet.set_column(9, 1, 15)
+   
+#     # Write data headers. 
+#     worksheet.write('A1', 'Vpc Id', bold)
+#     worksheet.write('B1', 'CIDR', bold)
+#     worksheet.write('C1', 'State', bold)
+#     worksheet.write('D1', 'Subnet Id', bold)
+#     # Start from the first cell. Rows and columns are zero indexed 
+#     row = 1
+#     col = 0 
+
+#     # Iterate over data and write it out row by row
+#     for vpc in vpcinfo.items():
+#         worksheet.write(row, col,     vpc_id)
+#         worksheet.write(row, col + 1, cidr  )
+#         worksheet.write(row, col + 2, state )
+#         worksheet.write(row, col + 3, subnet)
+#         row += 1
+        
+#     workbook.close()
+
 
 def all_regions(args):
     client = boto3.client('ec2') 
@@ -109,11 +225,12 @@ def all_regions(args):
         'Name': name,
         'Instance ID': instance.id,
         'Type': instance.instance_type,
-        'Platform': get_platform(instance),
+        'Platform': get_platform(instance), 
         'Security Group Name': get_security_groups(instance),
         'Security Group ID': get_security_groups_id(instance), 
         'State': instance.state['Name'],
         } 
+
     attributes = ['Region', 'Name', 'Instance ID', 'Type', 'Platform', 'Security Group Name', 'Security Group ID', 'State'] 
     t = PrettyTable(attributes)
     for instance_id, instance in ec2info.items():
@@ -121,10 +238,10 @@ def all_regions(args):
         instance['Type'], instance['Platform'], instance['Security Group Name'], instance['Security Group ID'], instance['State']])
     print(t)
 
-def export_to_xlsx(ec2info, attributes, args):
+def export_to_xlsx(ec2info, attributes_ec2, args):
     print("\n\nExporting following results to excel spreadsheet")
     print("--------------------------------------")
-    print(",".join(attributes))
+    print(",".join(attributes_ec2))
     print("")
 
     # Allow user to input own file_name
@@ -234,8 +351,8 @@ def parse_args(args):
         '-file_name',
         '--file_name',
         dest="file_name",
-        help="Exports output to file",
-    )
+        help="Exports output to file",)
+
     return parser.parse_args(args)
 
 
@@ -281,6 +398,8 @@ def main(args):
     # Do Stuff here
     if args.aws_service_name == 'ec2':
         run_ec2(args)
+    elif args.aws_service_name == 'vpc':
+        run_vpc(args)
     else:
         print("service name: " + args.aws_service_name + " is not currently supported")
         sys.exit(1)

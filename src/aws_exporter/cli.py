@@ -67,18 +67,22 @@ def get_platform(instance):
     if platform is None:
         return ('Linux')
 
+
 def get_security_groups(instance):
     for group in instance.security_groups:
         return group['GroupName']
 
+
 def get_security_groups_id(instance):
     for groupid in instance.security_groups:
         return groupid['GroupId']
-    
+
+
 def get_instance_name(instance):
     for tag in instance.tags:
         if 'Name' in tag['Key']:
             return tag['Value']
+
 
 def print_stdout(ec2info, attributes_ec2):
     t = PrettyTable(attributes_ec2)
@@ -88,118 +92,97 @@ def print_stdout(ec2info, attributes_ec2):
     print(t)
 
 
-# def run_vpc(args):
-#     client = boto3.client('ec2') 
-#     vpc = client.describe_vpcs()['Vpcs']
-#     subnets = client.describe_subnets()['Subnets']
-
-#     vpcinfo = {}
-#     attributes_vpc = ['Vpc Id', 'CIDR', 'State', 'Subnets']
-
-#     for vpc_id in vpc:
-#         vpc_id = vpc_id['VpcId']
-    
-#     for cidr in vpc:
-#         cidr = cidr['CidrBlock']
-    
-#     for state in vpc:
-#         state = state['State']
-    
-#     for subnet in subnets: 
-#         subnet = subnet['SubnetId']
-
-#     vpcinfo[vpc_id] = {
-#         'Vpc Id': vpc_id,
-#         'CIDR': cidr,
-#         'State': state,
-#         'Subnet Id': subnet, 
-#     }
-  
-#     t = PrettyTable(attributes_vpc)
-#     t.add_row([vpc_id, cidr, state, subnet])
-#     print(t)
-
-#     if args.xlsx:
-#         export_to_xlsx(vpcinfo, attributes_vpc, args)
-
-
-
 def run_vpc(args):
-    session = boto3.Session(
-        aws_access_key_id=args.access_key,
-        aws_secret_access_key=args.secret_key,
-    )
+    client = boto3.client('ec2')
+    vpcs = client.describe_vpcs()['Vpcs']
+    subnets = client.describe_subnets()['Subnets']
 
-    ec2 = session.resource('ec2')
-
-    # Get information for all running instances
-    running_vpcs = ec2.vpcs.filter(Filters=[{
-        'Name': 'tag:Name',
-        'Values': ['unnamed']}])
-    
     vpcinfo = {}
-    attributes_vpc = ['Vpc Id', 'CIDR', 'State', 'Instance Tenancy']
-    
-    for vpc in running_vpcs:
-        # Add instance info to a dictionary
-        vpcinfo[vpc.id] = {
-            'Vpc Id': vpc.id,
-            'CIDR': vpc.cidr_block,
-            'State': vpc.state,
-            'Instance Tenancy': vpc.instance_tenancy, 
-        }
-    
-    print_vpc(vpcinfo, attributes_vpc)
+    attributes_vpc = ['Vpc Id', 'CIDR', 'State', 'Subnets']
 
-def print_vpc(vpcinfo, attributes_vpc):
+    for vpc in vpcs:
+        vpc_id = vpc['VpcId']
+
+        subnets = []
+        for subnet in subnets:
+            subnets.append(subnet['SubnetId'])
+    for vpc in vpcs:
+        vpcinfo[vpc_id] = {
+            'Vpc Id': vpc_id,
+            'CIDR': vpc['CidrBlock'],
+            'State': vpc['State'],
+            'Subnet Id': subnets,
+        }
+
     t = PrettyTable(attributes_vpc)
-    for vpc_id, vpc in vpcinfo.items():
-        t.add_row([vpc_id, vpc.cidr_block, vpc.state, vpc.instance_tenancy])
+    t.add_row([vpc_id, vpc['CidrBlock'], vpc['State'], subnets])
     print(t)
 
-# def export_vpc_xlsx (vpcinfo, attributes_vpc, args):
-#     print("\n\nExporting following results to excel spreadsheet")
-#     print("--------------------------------------")
-#     print(",".join(attributes_vpc))
-#     print("")
+    if args.vpc_xlsx:
+        export_vpc_xlsx(vpcinfo, attributes_vpc, args)
 
-#     # Allow user to input own file_name
-#     file_name = args.file_name 
-#     if args.file_name is None:
-#         print("""
-#         Must enter file name 
-#         --file_name <file_name>
-#         """)    
 
-#     # Creates worksheet with user input
-#     workbook = xlsxwriter.Workbook(file_name)
-#     worksheet = workbook.add_worksheet('VPC')
+def export_vpc_xlsx (vpcinfo, attributes_vpc, args):
+    print("\n\nExporting following results to excel spreadsheet")
+    print("--------------------------------------")
+    print(",".join(attributes_vpc))
+    print("")
 
-#     # Add a bold format to use to highlight cells.
-#     bold = workbook.add_format({'bold': 1})
+    # Allow user to input own file_name
+    file_name = args.file_name 
+    if args.file_name is None:
+        print("""
+        Must enter file name 
+        --file_name <file_name>
+        """)    
+    client = boto3.client('ec2')
+    vpcs = client.describe_vpcs()['Vpcs']
+    subnets = client.describe_subnets()['Subnets']
 
-#     # Adjust the column width.
-#     worksheet.set_column(0, 1, 18)
-#     worksheet.set_column(9, 1, 15)
+    vpcinfo = {}
+    attributes_vpc = ['Vpc Id', 'CIDR', 'State', 'Subnets']
+
+    for vpc in vpcs:
+        vpc_id = vpc['VpcId']
+
+        subnets = []
+        for subnet in subnets:
+            subnets.append(subnet['SubnetId'])
+
+        vpcinfo[vpc_id] = {
+            'Vpc Id': vpc_id,
+            'CIDR': vpc['CidrBlock'],
+            'State': vpc['State'],
+            'Subnet Id': subnets,
+        }
+    # Creates worksheet with user input
+    workbook = xlsxwriter.Workbook(file_name)
+    worksheet = workbook.add_worksheet('VPC')
+
+    # Add a bold format to use to highlight cells.
+    bold = workbook.add_format({'bold': 1})
+
+    # Adjust the column width.
+    worksheet.set_column(0, 1, 18)
+    worksheet.set_column(9, 1, 15)
    
-#     # Write data headers. 
-#     worksheet.write('A1', 'Vpc Id', bold)
-#     worksheet.write('B1', 'CIDR', bold)
-#     worksheet.write('C1', 'State', bold)
-#     worksheet.write('D1', 'Subnet Id', bold)
-#     # Start from the first cell. Rows and columns are zero indexed 
-#     row = 1
-#     col = 0 
+    # Write data headers. 
+    worksheet.write('A1', 'Vpc Id', bold)
+    worksheet.write('B1', 'CIDR', bold)
+    worksheet.write('C1', 'State', bold)
+    worksheet.write('D1', 'Subnets', bold)
+    # Start from the first cell. Rows and columns are zero indexed 
+    row = 1
+    col = 0 
 
-#     # Iterate over data and write it out row by row
-#     for vpc in vpcinfo.items():
-#         worksheet.write(row, col,     vpc_id)
-#         worksheet.write(row, col + 1, cidr  )
-#         worksheet.write(row, col + 2, state )
-#         worksheet.write(row, col + 3, subnet)
-#         row += 1
-        
-#     workbook.close()
+    # Iterate over data and write it out row by row
+    for vpc_id, vpc in vpcinfo.items():
+        worksheet.write(row, col,     vpc_id          )
+        worksheet.write(row, col + 1, vpc['CidrBlock'])
+        worksheet.write(row, col + 2, vpc['State']    )
+        worksheet.write(row, col + 3, subnets         )
+        row += 1
+    workbook.close()
 
 
 def all_regions(args):
@@ -237,6 +220,7 @@ def all_regions(args):
         t.add_row([instance['Region'], instance['Name'], instance_id,
         instance['Type'], instance['Platform'], instance['Security Group Name'], instance['Security Group ID'], instance['State']])
     print(t)
+
 
 def export_to_xlsx(ec2info, attributes_ec2, args):
     print("\n\nExporting following results to excel spreadsheet")
@@ -278,16 +262,15 @@ def export_to_xlsx(ec2info, attributes_ec2, args):
 
     # Iterate over data and write it out row by row
     for instance_id, instance in ec2info.items():
-        worksheet.write(row, col,     instance['Region']                  )
-        worksheet.write(row, col + 1, instance['Name']                    )
-        worksheet.write(row, col + 2, instance_id                         )
-        worksheet.write(row, col + 3, instance['Type']                    )
-        worksheet.write(row, col + 4, instance['Platform']                )
-        worksheet.write(row, col + 5, instance['Security Group Name']     )
-        worksheet.write(row, col + 6, instance['Security Group ID']       )
-        worksheet.write(row, col + 7, instance['State']                   )
-        row += 1
-        
+        worksheet.write(row, col,     instance['Region']             )
+        worksheet.write(row, col + 1, instance['Name']               )
+        worksheet.write(row, col + 2, instance_id                    )
+        worksheet.write(row, col + 3, instance['Type']               )
+        worksheet.write(row, col + 4, instance['Platform']           )
+        worksheet.write(row, col + 5, instance['Security Group Name'])
+        worksheet.write(row, col + 6, instance['Security Group ID']  )
+        worksheet.write(row, col + 7, instance['State']              )
+        row += 1  
     workbook.close()
 
 
@@ -331,6 +314,11 @@ def parse_args(args):
     parser.add_argument(
         '-xlsx',
         '--xlsx',
+        help="Export to excel spreadsheet",
+        action='store_true')
+    parser.add_argument(
+        '-vpc_xlsx',
+        '--vpc_xlsx',
         help="Export to excel spreadsheet",
         action='store_true')
     parser.add_argument(

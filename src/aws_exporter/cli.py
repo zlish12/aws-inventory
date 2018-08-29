@@ -106,7 +106,6 @@ def run_vpc(args):
         subnets = []
         for subnet in subnets:
             subnets.append(subnet['SubnetId'])
-    for vpc in vpcs:
         vpcinfo[vpc_id] = {
             'Vpc Id': vpc_id,
             'CIDR': vpc['CidrBlock'],
@@ -135,26 +134,7 @@ def export_vpc_xlsx (vpcinfo, attributes_vpc, args):
         Must enter file name 
         --file_name <file_name>
         """)    
-    client = boto3.client('ec2')
-    vpcs = client.describe_vpcs()['Vpcs']
-    subnets = client.describe_subnets()['Subnets']
 
-    vpcinfo = {}
-    attributes_vpc = ['Vpc Id', 'CIDR', 'State', 'Subnets']
-
-    for vpc in vpcs:
-        vpc_id = vpc['VpcId']
-
-        subnets = []
-        for subnet in subnets:
-            subnets.append(subnet['SubnetId'])
-
-        vpcinfo[vpc_id] = {
-            'Vpc Id': vpc_id,
-            'CIDR': vpc['CidrBlock'],
-            'State': vpc['State'],
-            'Subnet Id': subnets,
-        }
     # Creates worksheet with user input
     workbook = xlsxwriter.Workbook(file_name)
     worksheet = workbook.add_worksheet('VPC')
@@ -170,17 +150,17 @@ def export_vpc_xlsx (vpcinfo, attributes_vpc, args):
     worksheet.write('A1', 'Vpc Id', bold)
     worksheet.write('B1', 'CIDR', bold)
     worksheet.write('C1', 'State', bold)
-    worksheet.write('D1', 'Subnets', bold)
+    worksheet.write('D1', 'Subnet Id', bold)
     # Start from the first cell. Rows and columns are zero indexed 
     row = 1
     col = 0 
 
     # Iterate over data and write it out row by row
     for vpc_id, vpc in vpcinfo.items():
-        worksheet.write(row, col,     vpc_id          )
-        worksheet.write(row, col + 1, vpc['CidrBlock'])
-        worksheet.write(row, col + 2, vpc['State']    )
-        worksheet.write(row, col + 3, subnets         )
+        worksheet.write(row, col,     vpc_id                  )
+        worksheet.write(row, col + 1, vpc['CIDR']             )
+        worksheet.write(row, col + 2, vpc['State']            )
+        worksheet.write_row(row, col + 3, vpc['Subnet Id']    )
         row += 1
     workbook.close()
 

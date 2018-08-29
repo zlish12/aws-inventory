@@ -117,7 +117,7 @@ def run_vpc(args):
     t.add_row([vpc_id, vpc['CidrBlock'], vpc['State'], subnets])
     print(t)
 
-    if args.vpc_xlsx:
+    if args.xlsx:
         export_vpc_xlsx(vpcinfo, attributes_vpc, args)
 
 
@@ -294,11 +294,6 @@ def parse_args(args):
     parser.add_argument(
         '-xlsx',
         '--xlsx',
-        help="Export to excel spreadsheet",
-        action='store_true')
-    parser.add_argument(
-        '-vpc_xlsx',
-        '--vpc_xlsx',
         help="Export to excel spreadsheet",
         action='store_true')
     parser.add_argument(

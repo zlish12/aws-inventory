@@ -4,7 +4,7 @@ aws-exporter
 
 
 
-AWS EC2 export tool built with python. Useful to get summarized information on AWS EC2. 
+AWS EC2 export tool built with python. Useful to get summarized information on AWS EC2 and VPC. 
 The tool by default produces a report that can easily be read from a terminal, 
 but it can also be used produce a tab separated output report that can be viewed 
 in an excel spreadsheet. This can be used by running the command followed by --xlsx.
@@ -32,9 +32,11 @@ How to set env variables:
         export AWS_SECRET_ACCESS_KEY=aabbCCDDeeff112233 
         
     4. esc :wq to save environment variables 
+    5. close and reopen terminal 
 
 Using CMD argument
     $ python ./cli.py ec2 --access_key AABBCCDDEEFF --secret_key aabbCCDDeeff112233 
+    $ python ./cli.py vpc --access_key AABBCCDDEEFF --secret_key aabbCCDDeeff112233 
 
 
 
@@ -49,7 +51,7 @@ Usage
 
 $ python src/aws_exporter/cli.py ec2           
 
-#reports EC2 information 
+#reports EC2 or VPC information 
 
 
 
@@ -66,14 +68,21 @@ $ python ./cli.py ec2
 |   1122aabb  | Name1 | t2.small | i-1123 | running |  linux   |
 +-------------+-------+----------+--------+---------+----------+
 
-$
+$ python ./cli.py vpc 
++-------------+------------+-----------+-----------+
+|   Vpc Id    |     CIDR   |   State   |   Subnets |  
++-------------+------------+-----------+-----------+
+| vpc-11aab22 | 111.22.0.0 | available |      []   |
++-------------+------------+-----------+-----------+
+
 
 
 If you want information from above to go into excel spread sheet:
 =====
-$ python ./cli.py ec2 --xlsx
+$ python ./cli.py ec2 --xlsx --file_name <filename>.xlsx
+$ python ./cli.py vpc --xlsx --file_name <filename>.xlsx
 
-#Filename is stored as AWS-EC2.xlsx
+#Filename is stored as <filename>.xlsx
 
 
 Note

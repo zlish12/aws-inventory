@@ -59,7 +59,7 @@ def run_ec2(args):
         all_regions(args)
 
     if args.xlsx:
-        export_to_xlsx(ec2info, attributes_ec2, args)
+        export_ec2_xlsx(ec2info, attributes_ec2, args)
     
    
 def get_platform(instance):
@@ -202,7 +202,7 @@ def all_regions(args):
     print(t)
 
 
-def export_to_xlsx(ec2info, attributes_ec2, args):
+def export_ec2_xlsx(ec2info, attributes_ec2, args):
     print("\n\nExporting following results to excel spreadsheet")
     print("--------------------------------------")
     print(",".join(attributes_ec2))
@@ -227,7 +227,7 @@ def export_to_xlsx(ec2info, attributes_ec2, args):
     worksheet.set_column(0, 1, 18)
     worksheet.set_column(9, 1, 15)
    
-    # Write data headers. 
+    # Write ec2 data headers. 
     worksheet.write('A1', 'Region', bold)
     worksheet.write('B1', 'Name', bold)
     worksheet.write('C1', 'Instance ID', bold)
@@ -241,6 +241,7 @@ def export_to_xlsx(ec2info, attributes_ec2, args):
     col = 0 
 
     # Iterate over data and write it out row by row
+    # Table output for ec2 command 
     for instance_id, instance in ec2info.items():
         worksheet.write(row, col,     instance['Region']             )
         worksheet.write(row, col + 1, instance['Name']               )

@@ -3,7 +3,7 @@ import os
 import argparse
 import sys
 
-#check for public key, secret, and region 
+#check for public key, secret, and region
 access_key = os.environ.get('AWS_ACCESS_KEY_ID')
 
 if access_key is None:

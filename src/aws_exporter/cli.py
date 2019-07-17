@@ -9,6 +9,7 @@ import os
 import logging
 import boto3
 import xlsxwriter
+import datetime
 
 
 from aws_exporter import __version__
@@ -19,72 +20,229 @@ __author__ = "Zlish"
 __copyright__ = "Zlish"
 __license__ = "mit"
 
-_logger = logging.getLogger(__name__)
-
-
-def run_ec2(args):
-    session = boto3.Session(
-        aws_access_key_id=args.access_key,
-        aws_secret_access_key=args.secret_key,
-    )
-
-    ec2 = session.resource('ec2')
-
-    # Get information for all running instances
-    running_instances = ec2.instances.filter(Filters=[{
-        'Name': 'instance-state-name',
-        'Values': ['running', 'stopped']}])
-
-
-    ec2info = {}
-    attributes = ['Region', 'Name', 'Instance ID', 'Type', 'Platform', 'Security Group Name', 'Security Group ID', 'State']
-
-    for instance in running_instances:
-        # Add instance info to a dictionary
-        ec2info[instance.id] = {
-            'Region': instance.placement['AvailabilityZone'],
-            'Name': get_instance_name(instance),
-            'Instance ID': instance.id,
-            'Type': instance.instance_type,
-            'Platform': get_platform(instance),
-            'Security Group Name': get_security_groups(instance),
-            'Security Group ID': get_security_groups_id(instance),
-            'State': instance.state['Name'],
-        }
-
-    # Print results to stdout
-    print_stdout(ec2info, attributes)
-    
-    if args.all_regions: 
-        all_regions(args)
-
-    if args.xlsx:
-        export_to_xlsx(ec2info, attributes, args)
+_logger = logging.getLogger(__name__)    
    
 def get_platform(instance):
     platform = instance.platform 
     if platform is None:
         return ('Linux')
 
+
 def get_security_groups(instance):
     for group in instance.security_groups:
         return group['GroupName']
 
+
 def get_security_groups_id(instance):
     for groupid in instance.security_groups:
         return groupid['GroupId']
-    
+
+
 def get_instance_name(instance):
     for tag in instance.tags:
         if 'Name' in tag['Key']:
             return tag['Value']
 
-def print_stdout(ec2info, attributes):
-    t = PrettyTable(attributes)
-    for instance_id, instance in ec2info.items():
-        t.add_row([instance['Region'], instance['Name'], instance_id,
-        instance['Type'], instance['Platform'], instance['Security Group Name'], instance['Security Group ID'], instance['State']])
+def run_s3(args):
+        # Create an S3 client
+    s3 = boto3.client('s3')
+
+    s3info = {}
+    attributes_s3 = ['Bucket name']
+
+    # Call S3 to list current buckets
+    response = s3.list_buckets()
+
+    # Get a list of all bucket names from the response
+    for bucket in response['Buckets']:
+        buckets = bucket['Name'] 
+
+        s3info[buckets] = {
+            'Bucket name': bucket['Name'],
+        }
+    t = PrettyTable(attributes_s3)
+    t.add_row([buckets])
     print(t)
+
+    if args.xlsx:
+        export_s3_xlsx(s3info, attributes_s3, args)
+
+def export_s3_xlsx(s3info, attributes_s3, args):
+    print("\n\nExporting following results to excel spreadsheet")
+    print("--------------------------------------")
+    print(",".join(attributes_s3))
+    print("")
+
+    # Allow user to input own file_name
+    file_name = args.file_name 
+    if args.file_name is None:
+        print("""
+        Must enter file name 
+        --file_name <file_name>
+        """)    
+
+    # Creates worksheet with user input
+    workbook = xlsxwriter.Workbook(file_name)
+    worksheet = workbook.add_worksheet('S3')
+
+    # Add a bold format to use to highlight cells.
+    bold = workbook.add_format({'bold': 1})
+
+    # Adjust the column width.
+    width = len("long text hidden test-1")
+    worksheet.set_column(0, 1, width)
+    worksheet.set_column(9, 1, width)
+   
+    # Write data headers. 
+    worksheet.write('A1', 'Bucket name', bold)
+    # Start from the first cell. Rows and columns are zero indexed 
+    row = 1
+    col = 0 
+
+    # Iterate over data and write it out row by row
+    for buckets, bucket in s3info.items():
+        worksheet.write(row, col, buckets)
+        row += 1
+    workbook.close()
+
+
+def run_iam(args):
+    # Create IAM client
+    iam = boto3.client('iam')
+
+    iaminfo = {}
+    attributes_iam = ['User name', 'User ID', 'ARN']
+
+    for user in iam.list_users()['Users']:
+        user_name = user['UserName']
+
+        iaminfo[user_name] = {
+            'User name': user_name,
+            'User ID': user['UserId'],
+            'ARN': user['Arn'],
+        }
+
+    t = PrettyTable(attributes_iam)
+    t.add_row([user_name, user['UserId'], user['Arn']])
+    print(t)
+
+    if args.xlsx:
+        export_iam_xlsx(iaminfo, attributes_iam, args)
+
+def export_iam_xlsx (iaminfo, attributes_iam, args):
+    print("\n\nExporting following results to excel spreadsheet")
+    print("--------------------------------------")
+    print(",".join(attributes_iam))
+    print("")
+
+    # Allow user to input own file_name
+    file_name = args.file_name 
+    if args.file_name is None:
+        print("""
+        Must enter file name 
+        --file_name <file_name>
+        """)    
+
+    # Creates worksheet with user input
+    workbook = xlsxwriter.Workbook(file_name)
+    worksheet = workbook.add_worksheet('IAM')
+
+    # Add a bold format to use to highlight cells.
+    bold = workbook.add_format({'bold': 1})
+
+    # Adjust the column width.
+    width = len("long text hidden test-1")
+    worksheet.set_column(0, 1, width)
+    worksheet.set_column(9, 1, width)
+   
+    # Write data headers. 
+    worksheet.write('A1', 'User name', bold)
+    worksheet.write('B1', 'User ID', bold)
+    worksheet.write('C1', 'ARN', bold)
+    # Start from the first cell. Rows and columns are zero indexed 
+    row = 1
+    col = 0 
+
+    # Iterate over data and write it out row by row
+    for user_name, user in iaminfo.items():
+        worksheet.write(row, col,     user_name             )
+        worksheet.write(row, col + 1, user['User ID']       )
+        worksheet.write(row, col + 2, user['ARN']           )
+        row += 1
+    workbook.close()
+
+def run_vpc(args):
+    client = boto3.client('ec2')
+    vpcs = client.describe_vpcs()['Vpcs']
+    subnets = client.describe_subnets()['Subnets']
+
+    vpcinfo = {}
+    attributes_vpc = ['Vpc Id', 'CIDR', 'State', 'Subnets']
+
+    for vpc in vpcs:
+        vpc_id = vpc['VpcId']
+
+        subnets = []
+        for subnet in subnets:
+            subnets.append(subnet['SubnetId'])
+        vpcinfo[vpc_id] = {
+            'Vpc Id': vpc_id,
+            'CIDR': vpc['CidrBlock'],
+            'State': vpc['State'],
+            'Subnet Id': subnets,
+        }
+
+    t = PrettyTable(attributes_vpc)
+    t.add_row([vpc_id, vpc['CidrBlock'], vpc['State'], subnets])
+    print(t)
+
+    if args.xlsx:
+        export_vpc_xlsx(vpcinfo, attributes_vpc, args)
+
+
+def export_vpc_xlsx (vpcinfo, attributes_vpc, args):
+    print("\n\nExporting following results to excel spreadsheet")
+    print("--------------------------------------")
+    print(",".join(attributes_vpc))
+    print("")
+
+    # Allow user to input own file_name
+    file_name = args.file_name 
+    if args.file_name is None:
+        print("""
+        Must enter file name 
+        --file_name <file_name>
+        """)    
+
+    # Creates worksheet with user input
+    workbook = xlsxwriter.Workbook(file_name)
+    worksheet = workbook.add_worksheet('VPC')
+
+    # Add a bold format to use to highlight cells.
+    bold = workbook.add_format({'bold': 1})
+
+    # Adjust the column width.
+    worksheet.set_column(0, 1, 18)
+    worksheet.set_column(9, 1, 15)
+   
+    # Write data headers. 
+    worksheet.write('A1', 'Vpc Id', bold)
+    worksheet.write('B1', 'CIDR', bold)
+    worksheet.write('C1', 'State', bold)
+    worksheet.write('D1', 'Subnet Id', bold)
+    # Start from the first cell. Rows and columns are zero indexed 
+    row = 1
+    col = 0 
+
+    # Iterate over data and write it out row by row
+    for vpc_id, vpc in vpcinfo.items():
+        worksheet.write(row, col,     vpc_id                  )
+        worksheet.write(row, col + 1, vpc['CIDR']             )
+        worksheet.write(row, col + 2, vpc['State']            )
+        worksheet.write_row(row, col + 3, vpc['Subnet Id']    )
+        row += 1
+    workbook.close()
+
 
 def all_regions(args):
     client = boto3.client('ec2') 
@@ -109,11 +267,12 @@ def all_regions(args):
         'Name': name,
         'Instance ID': instance.id,
         'Type': instance.instance_type,
-        'Platform': get_platform(instance),
+        'Platform': get_platform(instance), 
         'Security Group Name': get_security_groups(instance),
         'Security Group ID': get_security_groups_id(instance), 
         'State': instance.state['Name'],
         } 
+
     attributes = ['Region', 'Name', 'Instance ID', 'Type', 'Platform', 'Security Group Name', 'Security Group ID', 'State'] 
     t = PrettyTable(attributes)
     for instance_id, instance in ec2info.items():
@@ -121,10 +280,53 @@ def all_regions(args):
         instance['Type'], instance['Platform'], instance['Security Group Name'], instance['Security Group ID'], instance['State']])
     print(t)
 
-def export_to_xlsx(ec2info, attributes, args):
+def run_ec2(args):
+    session = boto3.Session(
+        aws_access_key_id=args.access_key,
+        aws_secret_access_key=args.secret_key,
+    )
+
+    ec2 = session.resource('ec2')
+
+    # Get information for all running instances
+    running_instances = ec2.instances.filter(Filters=[{
+        'Name': 'instance-state-name',
+        'Values': ['running', 'stopped']}])
+    
+
+    ec2info = {}
+    attributes_ec2 = ['Region', 'Name', 'Instance ID', 'Type', 'Platform', 'Security Group Name', 'Security Group ID', 'State']
+
+    for instance in running_instances:
+        # Add instance info to a dictionary
+        ec2info[instance.id] = {
+            'Region': instance.placement['AvailabilityZone'],
+            'Name': get_instance_name(instance),
+            'Instance ID': instance.id,
+            'Type': instance.instance_type,
+            'Platform': get_platform(instance),
+            'Security Group Name': get_security_groups(instance),
+            'Security Group ID': get_security_groups_id(instance),
+            'State': instance.state['Name'],
+        }
+
+    # Print results to stdout
+    t = PrettyTable(attributes_ec2)
+    for instance_id, instance in ec2info.items():
+        t.add_row([instance['Region'], instance['Name'], instance_id,
+        instance['Type'], instance['Platform'], instance['Security Group Name'], instance['Security Group ID'], instance['State']])
+    print(t)
+    
+    if args.all_regions: 
+        all_regions(args)
+
+    if args.xlsx:
+        export_ec2_xlsx(ec2info, attributes_ec2, args)
+
+def export_ec2_xlsx(ec2info, attributes_ec2, args):
     print("\n\nExporting following results to excel spreadsheet")
     print("--------------------------------------")
-    print(",".join(attributes))
+    print(",".join(attributes_ec2))
     print("")
 
     # Allow user to input own file_name
@@ -146,7 +348,7 @@ def export_to_xlsx(ec2info, attributes, args):
     worksheet.set_column(0, 1, 18)
     worksheet.set_column(9, 1, 15)
    
-    # Write data headers. 
+    # Write ec2 data headers. 
     worksheet.write('A1', 'Region', bold)
     worksheet.write('B1', 'Name', bold)
     worksheet.write('C1', 'Instance ID', bold)
@@ -160,17 +362,17 @@ def export_to_xlsx(ec2info, attributes, args):
     col = 0 
 
     # Iterate over data and write it out row by row
+    # Table output for ec2 command 
     for instance_id, instance in ec2info.items():
-        worksheet.write(row, col,     instance['Region']                  )
-        worksheet.write(row, col + 1, instance['Name']                    )
-        worksheet.write(row, col + 2, instance_id                         )
-        worksheet.write(row, col + 3, instance['Type']                    )
-        worksheet.write(row, col + 4, instance['Platform']                )
-        worksheet.write(row, col + 5, instance['Security Group Name']     )
-        worksheet.write(row, col + 6, instance['Security Group ID']       )
-        worksheet.write(row, col + 7, instance['State']                   )
-        row += 1
-        
+        worksheet.write(row, col,     instance['Region']             )
+        worksheet.write(row, col + 1, instance['Name']               )
+        worksheet.write(row, col + 2, instance_id                    )
+        worksheet.write(row, col + 3, instance['Type']               )
+        worksheet.write(row, col + 4, instance['Platform']           )
+        worksheet.write(row, col + 5, instance['Security Group Name'])
+        worksheet.write(row, col + 6, instance['Security Group ID']  )
+        worksheet.write(row, col + 7, instance['State']              )
+        row += 1  
     workbook.close()
 
 
@@ -234,8 +436,8 @@ def parse_args(args):
         '-file_name',
         '--file_name',
         dest="file_name",
-        help="Exports output to file",
-    )
+        help="Exports output to file",)
+
     return parser.parse_args(args)
 
 
@@ -281,6 +483,12 @@ def main(args):
     # Do Stuff here
     if args.aws_service_name == 'ec2':
         run_ec2(args)
+    elif args.aws_service_name == 'vpc':
+        run_vpc(args)
+    elif args.aws_service_name =='iam':
+        run_iam(args)
+    elif args.aws_service_name == 's3':
+        run_s3(args)
     else:
         print("service name: " + args.aws_service_name + " is not currently supported")
         sys.exit(1)

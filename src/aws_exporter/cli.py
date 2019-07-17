@@ -20,48 +20,7 @@ __author__ = "Zlish"
 __copyright__ = "Zlish"
 __license__ = "mit"
 
-_logger = logging.getLogger(__name__)
-
-
-def run_ec2(args):
-    session = boto3.Session(
-        aws_access_key_id=args.access_key,
-        aws_secret_access_key=args.secret_key,
-    )
-
-    ec2 = session.resource('ec2')
-
-    # Get information for all running instances
-    running_instances = ec2.instances.filter(Filters=[{
-        'Name': 'instance-state-name',
-        'Values': ['running', 'stopped']}])
-    
-
-    ec2info = {}
-    attributes_ec2 = ['Region', 'Name', 'Instance ID', 'Type', 'Platform', 'Security Group Name', 'Security Group ID', 'State']
-
-    for instance in running_instances:
-        # Add instance info to a dictionary
-        ec2info[instance.id] = {
-            'Region': instance.placement['AvailabilityZone'],
-            'Name': get_instance_name(instance),
-            'Instance ID': instance.id,
-            'Type': instance.instance_type,
-            'Platform': get_platform(instance),
-            'Security Group Name': get_security_groups(instance),
-            'Security Group ID': get_security_groups_id(instance),
-            'State': instance.state['Name'],
-        }
-
-    # Print results to stdout
-    print_stdout(ec2info, attributes_ec2)
-    
-    if args.all_regions: 
-        all_regions(args)
-
-    if args.xlsx:
-        export_ec2_xlsx(ec2info, attributes_ec2, args)
-    
+_logger = logging.getLogger(__name__)    
    
 def get_platform(instance):
     platform = instance.platform 
@@ -83,14 +42,6 @@ def get_instance_name(instance):
     for tag in instance.tags:
         if 'Name' in tag['Key']:
             return tag['Value']
-
-
-def print_stdout(ec2info, attributes_ec2):
-    t = PrettyTable(attributes_ec2)
-    for instance_id, instance in ec2info.items():
-        t.add_row([instance['Region'], instance['Name'], instance_id,
-        instance['Type'], instance['Platform'], instance['Security Group Name'], instance['Security Group ID'], instance['State']])
-    print(t)
 
 def run_iam(args):
     # Create IAM client
@@ -266,6 +217,48 @@ def all_regions(args):
         instance['Type'], instance['Platform'], instance['Security Group Name'], instance['Security Group ID'], instance['State']])
     print(t)
 
+def run_ec2(args):
+    session = boto3.Session(
+        aws_access_key_id=args.access_key,
+        aws_secret_access_key=args.secret_key,
+    )
+
+    ec2 = session.resource('ec2')
+
+    # Get information for all running instances
+    running_instances = ec2.instances.filter(Filters=[{
+        'Name': 'instance-state-name',
+        'Values': ['running', 'stopped']}])
+    
+
+    ec2info = {}
+    attributes_ec2 = ['Region', 'Name', 'Instance ID', 'Type', 'Platform', 'Security Group Name', 'Security Group ID', 'State']
+
+    for instance in running_instances:
+        # Add instance info to a dictionary
+        ec2info[instance.id] = {
+            'Region': instance.placement['AvailabilityZone'],
+            'Name': get_instance_name(instance),
+            'Instance ID': instance.id,
+            'Type': instance.instance_type,
+            'Platform': get_platform(instance),
+            'Security Group Name': get_security_groups(instance),
+            'Security Group ID': get_security_groups_id(instance),
+            'State': instance.state['Name'],
+        }
+
+    # Print results to stdout
+    t = PrettyTable(attributes_ec2)
+    for instance_id, instance in ec2info.items():
+        t.add_row([instance['Region'], instance['Name'], instance_id,
+        instance['Type'], instance['Platform'], instance['Security Group Name'], instance['Security Group ID'], instance['State']])
+    print(t)
+    
+    if args.all_regions: 
+        all_regions(args)
+
+    if args.xlsx:
+        export_ec2_xlsx(ec2info, attributes_ec2, args)
 
 def export_ec2_xlsx(ec2info, attributes_ec2, args):
     print("\n\nExporting following results to excel spreadsheet")

@@ -243,43 +243,6 @@ def export_vpc_xlsx (vpcinfo, attributes_vpc, args):
         row += 1
     workbook.close()
 
-
-def all_regions(args):
-    client = boto3.client('ec2') 
-    regions = client.describe_regions()['Regions'] 
-    
-    # Connect to EC2 
-    for region in regions:  
-        ec2 = boto3.resource('ec2',region_name=region['RegionName']) 
-    # Get information for all running instances 
-    running_instances = ec2.instances.filter(Filters=[{ 
-        'Name': 'instance-state-name', 
-        'Values': ['running', 'stopped']}]) 
-    ec2info = {}
-    for instance in running_instances: 
-        for tag in instance.tags: 
-            if 'Name'in tag['Key']: 
-                name = tag['Value']
-
-    # Add instance info to a dictionary 
-    ec2info[instance.id] = { 
-        'Region': region['RegionName'],
-        'Name': name,
-        'Instance ID': instance.id,
-        'Type': instance.instance_type,
-        'Platform': get_platform(instance), 
-        'Security Group Name': get_security_groups(instance),
-        'Security Group ID': get_security_groups_id(instance), 
-        'State': instance.state['Name'],
-        } 
-
-    attributes = ['Region', 'Name', 'Instance ID', 'Type', 'Platform', 'Security Group Name', 'Security Group ID', 'State'] 
-    t = PrettyTable(attributes)
-    for instance_id, instance in ec2info.items():
-        t.add_row([instance['Region'], instance['Name'], instance_id,
-        instance['Type'], instance['Platform'], instance['Security Group Name'], instance['Security Group ID'], instance['State']])
-    print(t)
-
 def run_ec2(args):
     session = boto3.Session(
         aws_access_key_id=args.access_key,
@@ -489,6 +452,12 @@ def main(args):
         run_iam(args)
     elif args.aws_service_name == 's3':
         run_s3(args)
+    elif args.aws_service_name == 'all':
+        run_iam(args)
+        run_ec2(args)
+        run_s3(args)
+        run_vpc(args)
+
     else:
         print("service name: " + args.aws_service_name + " is not currently supported")
         sys.exit(1)

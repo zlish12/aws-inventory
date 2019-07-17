@@ -43,6 +43,69 @@ def get_instance_name(instance):
         if 'Name' in tag['Key']:
             return tag['Value']
 
+def run_s3(args):
+        # Create an S3 client
+    s3 = boto3.client('s3')
+
+    s3info = {}
+    attributes_s3 = ['Bucket name']
+
+    # Call S3 to list current buckets
+    response = s3.list_buckets()
+
+    # Get a list of all bucket names from the response
+    for bucket in response['Buckets']:
+        buckets = bucket['Name'] 
+
+        s3info[buckets] = {
+            'Bucket name': bucket['Name'],
+        }
+    t = PrettyTable(attributes_s3)
+    t.add_row([buckets])
+    print(t)
+
+    if args.xlsx:
+        export_s3_xlsx(s3info, attributes_s3, args)
+
+def export_s3_xlsx(s3info, attributes_s3, args):
+    print("\n\nExporting following results to excel spreadsheet")
+    print("--------------------------------------")
+    print(",".join(attributes_s3))
+    print("")
+
+    # Allow user to input own file_name
+    file_name = args.file_name 
+    if args.file_name is None:
+        print("""
+        Must enter file name 
+        --file_name <file_name>
+        """)    
+
+    # Creates worksheet with user input
+    workbook = xlsxwriter.Workbook(file_name)
+    worksheet = workbook.add_worksheet('S3')
+
+    # Add a bold format to use to highlight cells.
+    bold = workbook.add_format({'bold': 1})
+
+    # Adjust the column width.
+    width = len("long text hidden test-1")
+    worksheet.set_column(0, 1, width)
+    worksheet.set_column(9, 1, width)
+   
+    # Write data headers. 
+    worksheet.write('A1', 'Bucket name', bold)
+    # Start from the first cell. Rows and columns are zero indexed 
+    row = 1
+    col = 0 
+
+    # Iterate over data and write it out row by row
+    for buckets, bucket in s3info.items():
+        worksheet.write(row, col, buckets)
+        row += 1
+    workbook.close()
+
+
 def run_iam(args):
     # Create IAM client
     iam = boto3.client('iam')
@@ -424,6 +487,8 @@ def main(args):
         run_vpc(args)
     elif args.aws_service_name =='iam':
         run_iam(args)
+    elif args.aws_service_name == 's3':
+        run_s3(args)
     else:
         print("service name: " + args.aws_service_name + " is not currently supported")
         sys.exit(1)

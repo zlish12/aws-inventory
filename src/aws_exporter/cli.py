@@ -9,6 +9,7 @@ import os
 import logging
 import boto3
 import xlsxwriter
+import datetime
 
 
 from aws_exporter import __version__
@@ -91,6 +92,70 @@ def print_stdout(ec2info, attributes_ec2):
         instance['Type'], instance['Platform'], instance['Security Group Name'], instance['Security Group ID'], instance['State']])
     print(t)
 
+def run_iam(args):
+    # Create IAM client
+    iam = boto3.client('iam')
+
+    iaminfo = {}
+    attributes_iam = ['User name', 'User ID', 'ARN']
+
+    for user in iam.list_users()['Users']:
+        user_name = user['UserName']
+
+        iaminfo[user_name] = {
+            'User name': user_name,
+            'User ID': user['UserId'],
+            'ARN': user['Arn'],
+        }
+
+    t = PrettyTable(attributes_iam)
+    t.add_row([user_name, user['UserId'], user['Arn']])
+    print(t)
+
+    if args.xlsx:
+        export_iam_xlsx(iaminfo, attributes_iam, args)
+
+def export_iam_xlsx (iaminfo, attributes_iam, args):
+    print("\n\nExporting following results to excel spreadsheet")
+    print("--------------------------------------")
+    print(",".join(attributes_iam))
+    print("")
+
+    # Allow user to input own file_name
+    file_name = args.file_name 
+    if args.file_name is None:
+        print("""
+        Must enter file name 
+        --file_name <file_name>
+        """)    
+
+    # Creates worksheet with user input
+    workbook = xlsxwriter.Workbook(file_name)
+    worksheet = workbook.add_worksheet('IAM')
+
+    # Add a bold format to use to highlight cells.
+    bold = workbook.add_format({'bold': 1})
+
+    # Adjust the column width.
+    width = len("long text hidden test-1")
+    worksheet.set_column(0, 1, width)
+    worksheet.set_column(9, 1, width)
+   
+    # Write data headers. 
+    worksheet.write('A1', 'User name', bold)
+    worksheet.write('B1', 'User ID', bold)
+    worksheet.write('C1', 'ARN', bold)
+    # Start from the first cell. Rows and columns are zero indexed 
+    row = 1
+    col = 0 
+
+    # Iterate over data and write it out row by row
+    for user_name, user in iaminfo.items():
+        worksheet.write(row, col,     user_name             )
+        worksheet.write(row, col + 1, user['User ID']       )
+        worksheet.write(row, col + 2, user['ARN']           )
+        row += 1
+    workbook.close()
 
 def run_vpc(args):
     client = boto3.client('ec2')
@@ -364,6 +429,8 @@ def main(args):
         run_ec2(args)
     elif args.aws_service_name == 'vpc':
         run_vpc(args)
+    elif args.aws_service_name =='iam':
+        run_iam(args)
     else:
         print("service name: " + args.aws_service_name + " is not currently supported")
         sys.exit(1)

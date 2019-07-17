@@ -4,10 +4,11 @@ aws-exporter
 
 
 
-AWS EC2 export tool built with python. Useful to get summarized information on AWS EC2 and VPC. 
+AWS EC2 export tool built with python. Useful to get summarized information on AWS EC2, IAM, S3, and VPC. 
 The tool by default produces a report that can easily be read from a terminal, 
 but it can also be used produce a tab separated output report that can be viewed 
-in an excel spreadsheet. This can be used by running the command followed by --xlsx.
+in an excel spreadsheet. This can be used by running the command followed by --xlsx --file_name <filename>.xlsx 
+and information will be stored in excel file.
 
 Install
 ==========
@@ -38,6 +39,7 @@ Using CMD argument
     $ python ./cli.py ec2 --access_key AABBCCDDEEFF --secret_key aabbCCDDeeff112233 
     $ python ./cli.py vpc --access_key AABBCCDDEEFF --secret_key aabbCCDDeeff112233 
     $ python ./cli.py iam --access_key AABBCCDDEEFF --secret_key aabbCCDDeeff112233
+    $ python ./cli.py s3 --access_key AABBCCDDEEFF --secret_key aabbCCDDeeff112233
 
 
 
@@ -52,7 +54,7 @@ Usage
 
 $ python src/aws_exporter/cli.py ec2           
 
-#reports EC2, IAM, or VPC information 
+#reports EC2, IAM, S3, or VPC information 
 
 
 
@@ -77,12 +79,20 @@ $ python ./cli.py vpc
 +-------------+------------+-----------+-----------+
 
 $ python ./cli.py iam 
-+-------------+------------+--------+
-|  User name  |   User ID  |   ARN  |
-+-------------+------------+--------+
-|  joe_smoe   | aabbcc1122 | arn:322|
-+-------------+------------+--------+
++--------------+------------+--------+
+|  User name   |   User ID  |   ARN  |
++--------------+------------+--------+
+|  user_name1  | aabbcc1122 | arn:322|
++--------------+------------+--------+
 
+$ python ./cli.py s3 
++---------------+
+|  Bucket name  | 
++---------------+
+| bucket_name01 | 
++---------------+
+|  bucket_name1 |
++---------------+
 
 
 
@@ -91,8 +101,9 @@ If you want information from above to go into excel spread sheet:
 $ python ./cli.py ec2 --xlsx --file_name <filename>.xlsx
 $ python ./cli.py vpc --xlsx --file_name <filename>.xlsx
 $ python ./cli.py iam --xlsx --file_name <filename>.xlsx
+$ python ./cli.py s3 --xlsx --file_name <filename>.xlsx
 
-#Filename is stored as <filename>.xlsx
+#*Filename is stored as <filename>.xlsx
 
 
 Note

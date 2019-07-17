@@ -44,6 +44,12 @@ Using CMD argument
 
     $ python ./cli.py s3 --access_key AABBCCDDEEFF --secret_key aabbCCDDeeff112233
 
+    Runs all the above service with one command (use command below)
+
+    $ python ./cli.py all --access_key AABBCCDDEEFF --secret_key aabbCCDDeeff112233
+
+    
+
 
 
 Setup Additional Dependencies 
@@ -102,6 +108,35 @@ $ python ./cli.py s3
 +---------------+
 |  bucket_name1 |
 +---------------+
+
+$ python ./cli.py all
+
++--------------+------------+--------+
+|  User name   |   User ID  |   ARN  |
++--------------+------------+--------+
+|  user_name1  | aabbcc1122 | arn:322|
++--------------+------------+--------+
+
++-------------+-------+----------+--------+---------+----------+
+| Instance ID |  Name |   Type   |   ID   |  State  | Platform | 
++-------------+-------+----------+--------+---------+----------+
+|   1122aabb  | Name1 | t2.small | i-1123 | running |  linux   |
++-------------+-------+----------+--------+---------+----------+
+
++---------------+
+|  Bucket name  | 
++---------------+
+| bucket_name01 | 
++---------------+
+|  bucket_name1 |
++---------------+
+
++-------------+------------+-----------+-----------+
+|   Vpc Id    |     CIDR   |   State   |   Subnets |  
++-------------+------------+-----------+-----------+
+| vpc-11aab22 | 111.22.0.0 | available |      []   |
++-------------+------------+-----------+-----------+
+
 
 
 

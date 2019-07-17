@@ -20,7 +20,7 @@ install boto3:
 Configure 
 ==========
 
-AWS EC2 export can be configured through using environment variables or through using command line arguments. 
+AWS tool can be configured through using environment variables or through using command line arguments. 
 
 How to set env variables:
     1. open terminal 
@@ -37,6 +37,7 @@ How to set env variables:
 Using CMD argument
     $ python ./cli.py ec2 --access_key AABBCCDDEEFF --secret_key aabbCCDDeeff112233 
     $ python ./cli.py vpc --access_key AABBCCDDEEFF --secret_key aabbCCDDeeff112233 
+    $ python ./cli.py iam --access_key AABBCCDDEEFF --secret_key aabbCCDDeeff112233
 
 
 
@@ -51,7 +52,7 @@ Usage
 
 $ python src/aws_exporter/cli.py ec2           
 
-#reports EC2 or VPC information 
+#reports EC2, IAM, or VPC information 
 
 
 
@@ -75,12 +76,21 @@ $ python ./cli.py vpc
 | vpc-11aab22 | 111.22.0.0 | available |      []   |
 +-------------+------------+-----------+-----------+
 
+$ python ./cli.py iam 
++-------------+------------+--------+
+|  User name  |   User ID  |   ARN  |
++-------------+------------+--------+
+|  joe_smoe   | aabbcc1122 | arn:322|
++-------------+------------+--------+
+
+
 
 
 If you want information from above to go into excel spread sheet:
 =====
 $ python ./cli.py ec2 --xlsx --file_name <filename>.xlsx
 $ python ./cli.py vpc --xlsx --file_name <filename>.xlsx
+$ python ./cli.py iam --xlsx --file_name <filename>.xlsx
 
 #Filename is stored as <filename>.xlsx
 

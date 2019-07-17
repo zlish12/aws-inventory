@@ -76,6 +76,7 @@ $ python ./cli.py ec2
 
 
 $ python ./cli.py vpc 
+
 +-------------+------------+-----------+-----------+
 |   Vpc Id    |     CIDR   |   State   |   Subnets |  
 +-------------+------------+-----------+-----------+
@@ -84,6 +85,7 @@ $ python ./cli.py vpc
 
 
 $ python ./cli.py iam 
+
 +--------------+------------+--------+
 |  User name   |   User ID  |   ARN  |
 +--------------+------------+--------+
@@ -92,6 +94,7 @@ $ python ./cli.py iam
 
 
 $ python ./cli.py s3 
+
 +---------------+
 |  Bucket name  | 
 +---------------+

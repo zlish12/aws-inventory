@@ -37,8 +37,11 @@ How to set env variables:
 
 Using CMD argument
     $ python ./cli.py ec2 --access_key AABBCCDDEEFF --secret_key aabbCCDDeeff112233 
+
     $ python ./cli.py vpc --access_key AABBCCDDEEFF --secret_key aabbCCDDeeff112233 
+
     $ python ./cli.py iam --access_key AABBCCDDEEFF --secret_key aabbCCDDeeff112233
+
     $ python ./cli.py s3 --access_key AABBCCDDEEFF --secret_key aabbCCDDeeff112233
 
 
@@ -71,6 +74,7 @@ $ python ./cli.py ec2
 |   1122aabb  | Name1 | t2.small | i-1123 | running |  linux   |
 +-------------+-------+----------+--------+---------+----------+
 
+
 $ python ./cli.py vpc 
 +-------------+------------+-----------+-----------+
 |   Vpc Id    |     CIDR   |   State   |   Subnets |  
@@ -78,12 +82,14 @@ $ python ./cli.py vpc
 | vpc-11aab22 | 111.22.0.0 | available |      []   |
 +-------------+------------+-----------+-----------+
 
+
 $ python ./cli.py iam 
 +--------------+------------+--------+
 |  User name   |   User ID  |   ARN  |
 +--------------+------------+--------+
 |  user_name1  | aabbcc1122 | arn:322|
 +--------------+------------+--------+
+
 
 $ python ./cli.py s3 
 +---------------+
@@ -99,11 +105,14 @@ $ python ./cli.py s3
 If you want information from above to go into excel spread sheet:
 =====
 $ python ./cli.py ec2 --xlsx --file_name <filename>.xlsx
+
 $ python ./cli.py vpc --xlsx --file_name <filename>.xlsx
+
 $ python ./cli.py iam --xlsx --file_name <filename>.xlsx
+
 $ python ./cli.py s3 --xlsx --file_name <filename>.xlsx
 
-#*Filename is stored as <filename>.xlsx
+*Filename is stored as <filename>.xlsx
 
 
 Note
